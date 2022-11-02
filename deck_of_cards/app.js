@@ -8,74 +8,73 @@ function logCards(cards) {
 }
 
 // 1)
-axios.get(`${BASE_URL}/new/draw`).then((res) => {
+async function one() {
+  let res = await axios.get(`${BASE_URL}/new/draw`);
   console.log("1)");
   logCards(res.data.cards);
-});
+}
 
 // 2)
-const cards = [];
-axios
-  .get(`${BASE_URL}/new/draw`)
-  .then((res) => {
-    res.data.cards.forEach((card) => {
-      cards.push(card);
-    });
-    return axios.get(`${BASE_URL}/${res.data.deck_id}/draw`);
-  })
-  .then((res) => {
-    console.log("2)");
-    res.data.cards.forEach((card) => {
-      cards.push(card);
-    });
-    logCards(cards);
+async function two() {
+  const cards = [];
+  let res = await axios.get(`${BASE_URL}/new/draw`);
+  res.data.cards.forEach((card) => {
+    cards.push(card);
   });
+  res = await axios.get(`${BASE_URL}/${res.data.deck_id}/draw`);
+  res.data.cards.forEach((card) => {
+    cards.push(card);
+  });
+  console.log("2)");
+  logCards(cards);
+}
 
 // 3)
 const deck = {
-  init: () => {
-    axios.get(`${BASE_URL}/new/shuffle`).then((res) => {
-      this.deckId = res.data.deck_id;
-    });
+  init: async () => {
+    res = await axios.get(`${BASE_URL}/new/shuffle`);
+    this.deckId = res.data.deck_id;
   },
-  draw: (count) => {
-    return new Promise((resolve, reject) => {
-      axios.get(`${BASE_URL}/${this.deckId}/draw?count=${count}`).then((res) => {
-        resolve(res.data.cards);
-      });
-    });
+  draw: async (count) => {
+    res = await axios.get(`${BASE_URL}/${this.deckId}/draw?count=${count}`);
+    return res.data.cards;
   },
-  reshuffle: () => {
-    axios.get(`${BASE_URL}/${this.deckId}/shuffle`);
+  reshuffle: async () => {
+    await axios.get(`${BASE_URL}/${this.deckId}/shuffle`);
   },
 };
 
-function drawCard() {
+async function drawCard() {
   function randomCords() {
     this.x = Math.random() * 25;
     this.y = Math.random() * 25;
-    this.angle = Math.random() * 360 - 180;
+    this.angle = Math.random() * 360;
   }
 
-  deck.draw(1).then((cards) => {
-    cards.forEach((card) => {
-      cords = new randomCords();
-      $("<img>", {
-        src: card.image,
-        class: "game-card",
-        style: `
+  cards = await deck.draw(1);
+  cards.forEach((card) => {
+    cords = new randomCords();
+    $("<img>", {
+      src: card.image,
+      class: "game-card",
+      style: `
         transform: translate(${cords.x}px, ${cords.y}px) rotate(${cords.angle}deg);
         `,
-      }).appendTo(PILE);
-    });
+    }).appendTo(PILE);
   });
 }
 
-function shuffle() {
-  deck.reshuffle();
+async function shuffle() {
   PILE.empty();
+  deck.reshuffle();
 }
 
-$(document).ready(deck.init);
+function start() {
+  one();
+  two();
+  deck.init();
+}
+
+$(document).ready(start);
 $("#draw").on("click", drawCard);
 $("#reshuffle").on("click", shuffle);

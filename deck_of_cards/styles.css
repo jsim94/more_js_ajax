@@ -1,0 +1,8 @@
+#pile {
+  position: relative;
+  width: 400px;
+}
+
+.game-card {
+  position: absolute;
+}
